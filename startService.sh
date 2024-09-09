@@ -1,1 +1,1 @@
-node $(dirname $0)/sharedfilestorage.js --port=15673 --maxfiles=10 --maxkeys=100 --userid=user@example.com --password=secret
+node $(dirname $0)/sharedfilestorage.js --port=15673 --maxfiles=10 --maxkeys=100 --userid=user@example.com --password=secret --statefile=providedkeys.json

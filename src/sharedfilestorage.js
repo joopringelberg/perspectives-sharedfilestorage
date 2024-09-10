@@ -22,12 +22,12 @@
 
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
-import { readFile } from 'node:fs/promises';
-import { Storage } from 'megajs'
-const init = require ('@paralleldrive/cuid2').init;
-var argv = require('yargs/yargs')(process.argv.slice(2)).parse();
+const {readFile} = require('node:fs/promises');
+const {Storage} = require('megajs');
+const {init} = require ('@paralleldrive/cuid2');
+
+const argv = require('yargs/yargs')(process.argv.slice(2)).parse();
 
 const port = argv.port;
 const maxfiles = argv.maxfiles || 10
@@ -37,7 +37,8 @@ const password = argv.password;
 // The path to the file in which we save `providedKeys`.
 const statefile = argv.statefile;
 
-let megaStorage, providedKeys, nrOfKeys = {};
+let megaStorage, providedKeys = {};
+let storeChanged = false;
 // providedKeys = {key: {nrOfUploadedFiles: INT, nrOfRequestedKeys: INT}}
 
 new Storage(
@@ -53,10 +54,16 @@ app.use(express.json());
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+// E.g.:
+// 
+// curl -X POST http://localhost:15673/ppsfs/uploadfile \
+// -F "sharedFileServerKey=a-previously-provided-key" \
+// -F "file=@./smallFlower.png"
+// 
 // Always returns a object, either:
 // {error: INTEGER, message: STRING}
 // {megaUrl: STRING}
-app.post('/ppfsf/uploadfile', upload.single('file'), async(req, res) => {
+app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
   if (!req.file ) {
     res.status(400).send({error: NOFILE, message: 'no file uploaded'});
   }
@@ -66,7 +73,7 @@ app.post('/ppfsf/uploadfile', upload.single('file'), async(req, res) => {
   else if ( !providedKeys[req.body.sharedFileServerKey] ) {
     res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
   }
-  else if ( !uploadAllowed( providedKeys[req.body.sharedFileServerKey] )){
+  else if ( !uploadAllowed( req.body.sharedFileServerKey, providedKeys[req.body.sharedFileServerKey] )){
     res.status(403).send({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
   }
   else {
@@ -74,7 +81,8 @@ app.post('/ppfsf/uploadfile', upload.single('file'), async(req, res) => {
       // Buffer of the uploaded file (from Multer).
       const fileBuffer = req.file.buffer 
       const uint8Array = new Uint8Array( fileBuffer );
-      megaStorage.upload( { name: req.body.name, size: req.body.size }, uint8Array ).complete
+      megaStorage.upload( { name: req.file.originalname, size: req.file.size }, uint8Array ).complete
+        .then( file => file.link() )
         .then( megaUrl => res.status(201).send( {megaUrl} ))
     }
     catch(e) {
@@ -82,13 +90,28 @@ app.post('/ppfsf/uploadfile', upload.single('file'), async(req, res) => {
     }
   }})
 
+// E.g.:
+// 
+// curl -X POST http://localhost:15673/ppsfs/stop \
+// -F "pw=password-of-mega-account"
+// 
+app.post('/ppsfs/stop', upload.none(), (req, res) => {
+  if (!req.body.pw || req.body.pw != password) {
+    res.status(401).send({error: UNAUTHORIZED, message: "The password to the Mega account is required to stop this service."})
+  }
+  else {
+    setTimeout( gracefulShutdown, 5000 );
+    res.status(200).send("Shutting down in 5 seconds.");
+  }
+})
 
 // Checks whether the maximum number of uploads hasn't yet been reached.
 // If allowed increases the number of registered uploads for this key.
-function uploadAllowed( {nrOfUploadedFiles, nrOfRequestedKeys} )
+function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 {
   if (nrOfUploadedFiles < maxfiles){
     providedKeys[key] = {nrOfUploadedFiles: nrOfUploadedFiles + 1, nrOfRequestedKeys};
+    storeChanged = true;
     return true;
   }
   else {
@@ -96,11 +119,17 @@ function uploadAllowed( {nrOfUploadedFiles, nrOfRequestedKeys} )
   }
 }
 
+// E.g.:
+// 
+// curl -X POST http://localhost:15673/ppsfs/getsharedfileserverkey \
+// -H "Content-Type: application/json" \
+// -d '{"key":"a-previously-provided-key"}'
+// 
 // Always returns a object, either:
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
 app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
-  const key = req.body.key;
+  const key = req.body.sharedFileServerKey;
   let newKey;
   if (!key) {
     res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
@@ -108,21 +137,23 @@ app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
   else if ( !providedKeys[key] ) {
     res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
   }
-  else if (!newKeyAllowed( providedKeys[key] )) {
+  else if (!newKeyAllowed( key, providedKeys[key] )) {
     res.status(403).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
   } 
   else {
     newKey = cuid();
+    providedKeys[newKey] = {nrOfUploadedFiles: 0, nrOfRequestedKeys: 0}
     res.status(201).send({newKey});
   }
 });
 
 // Checks whether the maximum number of uploads hasn't yet been reached.
 // If allowed increases the number of registered uploads for this key.
-function newKeyAllowed( {nrOfUploadedFiles, nrOfRequestedKeys} )
+function newKeyAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 {
   if (nrOfRequestedKeys < maxkeys){
     providedKeys[key] = {nrOfUploadedFiles, nrOfRequestedKeys: nrOfRequestedKeys + 1};
+    storeChanged = true;
     return true;
   }
   else {
@@ -137,6 +168,7 @@ const KEYUNKNOWN = 3;
 const MAXFILESREACHED = 4;
 const MEGAERROR = 5;
 const MAXKEYSREACHED = 6;
+const UNAUTHORIZED = 7;
 
 // The init function returns a custom createId function with the specified
 // configuration. All configuration properties are optional.
@@ -154,11 +186,10 @@ const cuid = init({
 // Save the providedKeys object to file if any changes have been made.
 function saveState()
 {
-  const currentNumberOfKeys = Object.keys(providedKeys).length;
-  if (nrOfKeys < currentNumberOfKeys)
+  if (storeChanged)
   {
-    nrOfKeys = currentNumberOfKeys;
-    fs.writeFileSync(statefile, providedKeys);
+    fs.writeFileSync(statefile, JSON.stringify( providedKeys) );
+    storeChanged = false;
   }
 }
 

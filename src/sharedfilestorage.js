@@ -57,7 +57,7 @@ const upload = multer({ storage: storage });
 // E.g.:
 // 
 // curl -X POST http://localhost:15673/ppsfs/uploadfile \
-// -F "sharedFileServerKey=a-previously-provided-key" \
+// -F "sharedfileserverkey=a-previously-provided-key" \
 // -F "file=@./smallFlower.png"
 // 
 // Always returns a object, either:
@@ -67,13 +67,13 @@ app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
   if (!req.file ) {
     res.status(400).send({error: NOFILE, message: 'no file uploaded'});
   }
-  else if (!req.body.sharedFileServerKey) {
+  else if (!req.body.sharedfileserverkey) {
     res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
   }
-  else if ( !providedKeys[req.body.sharedFileServerKey] ) {
+  else if ( !providedKeys[req.body.sharedfileserverkey] ) {
     res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
   }
-  else if ( !uploadAllowed( req.body.sharedFileServerKey, providedKeys[req.body.sharedFileServerKey] )){
+  else if ( !uploadAllowed( req.body.sharedfileserverkey, providedKeys[req.body.sharedfileserverkey] )){
     res.status(403).send({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
   }
   else {
@@ -129,7 +129,7 @@ function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
 app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
-  const key = req.body.sharedFileServerKey;
+  const key = req.body.sharedfileserverkey;
   let newKey;
   if (!key) {
     res.status(401).send({error: NOKEY, message: "A key is needed for this request."})

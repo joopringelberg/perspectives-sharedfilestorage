@@ -11,14 +11,14 @@ Each installation would require the credentials of that account. This clearly is
 
 The MyContexts client limits the number of free uploads. However, we also have the relay service limit the number of uploads. Furthermore, we would like to make sure that only MyContexts installations use this service. This is not entirely possible due to the distributed nature of MyContexts. Instead, we base the usage of the service on the principle of the trusted network that is formed by MyContexts peers. Assuming the bona fide nature of any peer within the network, we ensure that a new user can only use perspectives-sharedfilestorage when spoken for by a peer who is already in the network. This is accounted for by some modelling in `model://perspectives.domains#System`. On the side of the service this requires two endpoints that each require "multipart/form-data":
 
-* `/ppsfs/getsharedfileserverkey`, with parameter `sharedfileserverkey` (a previously provided key), that returns a key (a CUID2 identifier);
-* `/ppsfs/uploadfile`, with with parameters `sharedfileserverkey` and `file`, that returns a success or failure message in case the maximum number of uploads for the key has been reached before.
+* `/ppsfs/getsharedfileserverkey`, requires a JSON content body with parameter `sharedfileserverkey` (a previously provided key), that returns a key (a CUID2 identifier);
+* `/ppsfs/uploadfile`, requires "multipart/form-data" with parameters `sharedfileserverkey` and `file`, that returns a success or failure message in case the maximum number of uploads for the key has been reached before.
 
 Clarification: the key that is sent along with `getsharedfileserverkey` is the key of a peer already in the trusted network; the key that is sent back is a new key that is given to a new peer. Obviously, `uploadfile` requires a peer's own key.
 
 There is another endpoint: 
 
-* `/ppsfs/stop`, requiring parameter `pw` whose value should equal the password of the mega account behind the relay service (the value of the `--password` command line parameter).
+* `/ppsfs/stop`, requires "multipart/form-data" with parameter `pw` whose value should equal the password of the mega account behind the relay service (the value of the `--password` command line parameter).
 
 ## Apache
 Apache must be configured to pass any request to these endpoints to the locally listening `perspectives-sharedfilestorage`. Here is a suitable Apache conf section:
@@ -72,11 +72,11 @@ Start the service from the project root directory using
 ./startService.sh
 ```
 
-To test, use curl:
+To test locally, use curl:
 ```
 curl -X POST http://localhost:15673/ppsfs/getsharedfileserverkey \
 -H "Content-Type: application/json" \
--d '{"key":"a-previously-provided-key"}'
+-d '{"sharedfileserverkey":"a-previously-provided-key"}'
 
 curl -X POST http://localhost:15673/ppsfs/uploadfile \
 -F "sharedfileserverkey=a-previously-provided-key" \
@@ -107,11 +107,20 @@ To debug in VScode, create a Node debug configuration like this:
 
 Start the process and then attach the debugger.
 
-## Test on mycontexts.com
-
-## Install
-Install using npm:
+## Install (on mycontexts.com)
+Clone using git:
 
 ```
-npm install git+https://github.com/joopringelberg/perspectives-sharedfilestorage.git
+git clone https://github.com/joopringelberg/perspectives-sharedfilestorage.git
+```
+
+Then start the service on a free port.
+
+## Test on mycontexts.com
+Test with curl like this:
+
+```
+curl -X POST https://mycontexts.com/ppsfs/getsharedfileserverkey \
+-H "Content-Type: application/json" \
+-d '{"sharedfileserverkey":"a-previously-provided-key"}'
 ```

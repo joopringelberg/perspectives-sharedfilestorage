@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "A relay service to store media files in a cloud service, that can be called from the MyContexts client.",
   "main": "sharedfilestorage.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "publish": "scp -r ./src/* joop@inplace.works:/home/joop/ppsfs"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joopringelberg/perspectives-sharedfilestorage.git"

@@ -25,7 +25,7 @@ Apache must be configured to pass any request to these endpoints to the locally 
 
 ```
     <Location "/ppsfs>
-      ProxyPass http://localhost:15673
+      ProxyPass http://localhost:15673/ppsfs
     </Location>
 ```
 
@@ -107,5 +107,11 @@ To debug in VScode, create a Node debug configuration like this:
 
 Start the process and then attach the debugger.
 
-## Using
-For https://mycontexts.com, the three source files can be copied to `/home/joop/ppsfs` with the package script `publish`.
+## Test on mycontexts.com
+
+## Install
+Install using npm:
+
+```
+npm install git+https://github.com/joopringelberg/perspectives-sharedfilestorage.git
+```

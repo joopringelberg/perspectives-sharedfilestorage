@@ -1,1 +1,1 @@
-node $(dirname $0)/sharedfilestorage.js --port=15673 --maxfiles=10 --maxkeys=100 --userid=joop.ringelberg@gmail.com --password=wAteengroteho15p... --statefile=providedkeys.json
+node $(dirname $0)/sharedfilestorage.js --port=15673 --maxfiles=10 --maxkeys=100 --userid=email-of-mega-account --password=password-of-mega-account --statefile=providedkeys.json

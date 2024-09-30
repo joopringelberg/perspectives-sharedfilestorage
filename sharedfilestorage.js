@@ -129,7 +129,8 @@ function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
 app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
-  const key = JSON.parse( req.body ).sharedfileserverkey;
+  const key = req.body.sharedfileserverkey;
+  console.log( req.body);
   let newKey;
   if (!key) {
     res.status(401).send({error: NOKEY, message: "A key is needed for this request."})

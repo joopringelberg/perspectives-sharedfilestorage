@@ -123,13 +123,13 @@ function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 // 
 // curl -X POST http://localhost:15673/ppsfs/getsharedfileserverkey \
 // -H "Content-Type: application/json" \
-// -d '{"key":"a-previously-provided-key"}'
+// -d '{"sharedfileserverkey":"a-previously-provided-key"}'
 // 
 // Always returns a object, either:
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
 app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
-  const key = req.body.sharedfileserverkey;
+  const key = JSON.parse( req.body ).sharedfileserverkey;
   let newKey;
   if (!key) {
     res.status(401).send({error: NOKEY, message: "A key is needed for this request."})

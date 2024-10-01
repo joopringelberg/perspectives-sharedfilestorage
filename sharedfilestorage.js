@@ -128,8 +128,8 @@ function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 // Always returns a object, either:
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
-app.post('/ppsfs/getsharedfileserverkey', (req, res) => {
-  const key = req.body.sharedfileserverkey;
+app.post('/ppsfs/getsharedfileserverkey', express.text(), (req, res) => {
+  const key = JSON.parse( req.body ).sharedfileserverkey;
   console.log( req.body);
   let newKey;
   if (!key) {

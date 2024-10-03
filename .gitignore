@@ -130,3 +130,4 @@ dist
 .pnp.*
 
 startService_private.sh
+startPm2_private.sh

@@ -129,22 +129,27 @@ function uploadAllowed( key, {nrOfUploadedFiles, nrOfRequestedKeys} )
 // {error: INTEGER, message: STRING}
 // {newKey: STRING}
 app.post('/ppsfs/getsharedfileserverkey', express.text(), (req, res) => {
-  const key = JSON.parse( req.body ).sharedfileserverkey;
-  console.log( req.body);
-  let newKey;
-  if (!key) {
-    res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
-  }
-  else if ( !providedKeys[key] ) {
-    res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
-  }
-  else if (!newKeyAllowed( key, providedKeys[key] )) {
-    res.status(403).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
-  } 
-  else {
-    newKey = cuid();
-    providedKeys[newKey] = {nrOfUploadedFiles: 0, nrOfRequestedKeys: 0}
-    res.status(201).send({newKey});
+  try {
+    const key = JSON.parse( req.body ).sharedfileserverkey;
+    console.log( req.body);
+    let newKey;
+    if (!key) {
+      res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
+    }
+    else if ( !providedKeys[key] ) {
+      res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
+    }
+    else if (!newKeyAllowed( key, providedKeys[key] )) {
+      res.status(403).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
+    } 
+    else {
+      newKey = cuid();
+      providedKeys[newKey] = {nrOfUploadedFiles: 0, nrOfRequestedKeys: 0}
+      res.status(201).send({newKey});
+    }
+      
+  } catch (error) {
+    console.log( "getsharedfileserverkey fails. This is the error: ", error )    
   }
 });
 

@@ -65,16 +65,16 @@ const upload = multer({ storage: storage });
 // {megaUrl: STRING}
 app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
   if (!req.file ) {
-    res.status(202).send({error: NOFILE, message: 'no file uploaded'});
+    res.status(202).json({error: NOFILE, message: 'no file uploaded'});
   }
   else if (!req.body.sharedfileserverkey) {
-    res.status(202).send({error: NOKEY, message: "A key is needed for this request."})
+    res.status(202).json({error: NOKEY, message: "A key is needed for this request."})
   }
   else if ( !providedKeys[req.body.sharedfileserverkey] ) {
-    res.status(202).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
+    res.status(202).json({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
   }
   else if ( !uploadAllowed( req.body.sharedfileserverkey, providedKeys[req.body.sharedfileserverkey] )){
-    res.status(202).send({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
+    res.status(202).json({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
   } 
   else {
     try {
@@ -83,10 +83,10 @@ app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
       const uint8Array = new Uint8Array( fileBuffer );
       megaStorage.upload( { name: req.file.originalname, size: req.file.size }, uint8Array ).complete
         .then( file => file.link() )
-        .then( megaUrl => res.status(201).send( {megaUrl} ))
+        .then( megaUrl => res.status(201).json( {megaUrl} ))
     }
     catch(e) {
-      res.status(400).send({error: MEGAERROR, message: e.toString()});
+      res.status(400).json({error: MEGAERROR, message: e.toString()});
     }
   }})
 
@@ -97,11 +97,11 @@ app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
 // 
 app.post('/ppsfs/stop', upload.none(), (req, res) => {
   if (!req.body.pw || req.body.pw != password) {
-    res.status(401).send({error: UNAUTHORIZED, message: "The password to the Mega account is required to stop this service."})
+    res.status(401).json({error: UNAUTHORIZED, message: "The password to the Mega account is required to stop this service."})
   }
   else {
     setTimeout( gracefulShutdown, 5000 );
-    res.status(200).send("Shutting down in 5 seconds.");
+    res.status(200).json("Shutting down in 5 seconds.");
   }
 })
 
@@ -134,18 +134,18 @@ app.post('/ppsfs/getsharedfileserverkey', express.text(), (req, res) => {
     console.log( req.body);
     let newKey;
     if (!key) {
-      res.status(202).send({error: NOKEY, message: "A key is needed for this request."})
+      res.status(202).json({error: NOKEY, message: "A key is needed for this request."})
     }
     else if ( !providedKeys[key] ) {
-      res.status(202).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
+      res.status(202).json({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
     }
     else if (!newKeyAllowed( key, providedKeys[key] )) {
-      res.status(202).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
+      res.status(202).json({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
     } 
     else {
       newKey = cuid();
       providedKeys[newKey] = {nrOfUploadedFiles: 0, nrOfRequestedKeys: 0}
-      res.status(201).send({newKey});
+      res.status(201).json({newKey});
     }
       
   } catch (error) {

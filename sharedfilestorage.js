@@ -65,17 +65,17 @@ const upload = multer({ storage: storage });
 // {megaUrl: STRING}
 app.post('/ppsfs/uploadfile', upload.single('file'), async(req, res) => {
   if (!req.file ) {
-    res.status(400).send({error: NOFILE, message: 'no file uploaded'});
+    res.status(202).send({error: NOFILE, message: 'no file uploaded'});
   }
   else if (!req.body.sharedfileserverkey) {
-    res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
+    res.status(202).send({error: NOKEY, message: "A key is needed for this request."})
   }
   else if ( !providedKeys[req.body.sharedfileserverkey] ) {
-    res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
+    res.status(202).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
   }
   else if ( !uploadAllowed( req.body.sharedfileserverkey, providedKeys[req.body.sharedfileserverkey] )){
-    res.status(403).send({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
-  }
+    res.status(202).send({error: MAXFILESREACHED, message: 'The maximum number of files has been reached for this key.'})
+  } 
   else {
     try {
       // Buffer of the uploaded file (from Multer).

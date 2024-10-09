@@ -134,13 +134,13 @@ app.post('/ppsfs/getsharedfileserverkey', express.text(), (req, res) => {
     console.log( req.body);
     let newKey;
     if (!key) {
-      res.status(401).send({error: NOKEY, message: "A key is needed for this request."})
+      res.status(202).send({error: NOKEY, message: "A key is needed for this request."})
     }
     else if ( !providedKeys[key] ) {
-      res.status(406).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
+      res.status(202).send({error: KEYUNKNOWN, message: 'This key is not given out by this service.'})
     }
     else if (!newKeyAllowed( key, providedKeys[key] )) {
-      res.status(403).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
+      res.status(202).send({error: MAXKEYSREACHED, message: "The maximum number of new keys has been reached."})
     } 
     else {
       newKey = cuid();

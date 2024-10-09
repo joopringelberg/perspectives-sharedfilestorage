@@ -116,6 +116,12 @@ git clone https://github.com/joopringelberg/perspectives-sharedfilestorage.git
 
 Then start the service on a free port.
 
+When the source has been changed, update it on the server like this:
+
+```
+git pull origin
+```
+
 ## Test on mycontexts.com
 Test with curl like this:
 
